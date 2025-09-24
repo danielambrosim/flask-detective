@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checar Instagram com Sherlock</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 16px; }
+    form { display: flex; gap: 8px; }
+    input[type=text]{ flex:1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
+    button{ padding: 10px 16px; border: 0; border-radius: 8px; cursor: pointer; }
+    .primary{ background:#111; color:#fff; }
+    .card{ margin-top: 16px; padding: 12px 14px; border:1px solid #e5e5e5; border-radius:10px; }
+    .ok{ color: #0a0; }
+    .bad{ color: #a00; }
+    small{ color:#666; }
+  </style>
+</head>
+<body>
+  <h1>Checar usuário do Instagram</h1>
+  <p>Digite o @ (sem o @) para verificar se existe no Instagram via Sherlock.</p>
+  <form method="post">
+    <input type="text" name="username" placeholder="ex: daniel.churros" value="{{ username|e }}" />
+    <button class="primary" type="submit">Checar</button>
+  </form>
+
+  {% if error %}
+    <div class="card bad">{{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+    <div class="card">
+      <strong class="{{ 'ok' if result.status == 'encontrado' else 'bad' }}">
+        {{ result.message|safe }}
+      </strong>
+      <div style="margin-top:8px;">
+        <small>Obs.: resultados podem variar por limites, bloqueios e mudanças do Instagram.</small>
+      </div>
+    </div>
+  {% endif %}
+</body>
+</html>
