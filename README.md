@@ -31,7 +31,7 @@ Certifique-se de ter o **Python 3.x** e o `pip` instalados em sua máquina.
 ### 2. Clonar o Repositório
 
 ```bash
-git clone [https://github.com/seu-usuario/sherlock-flask.git](https://github.com/seu-usuario/sherlock-flask.git)
+git clone [(https://github.com/danielambrosim/flask-detective.git)]
 cd sherlock-flask
 ```
 
