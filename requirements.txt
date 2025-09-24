@@ -5,3 +5,4 @@ requests
 colorama
 lxml
 beautifulsoup4
+gunicorn
