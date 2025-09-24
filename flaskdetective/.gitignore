@@ -1,0 +1,4 @@
+venv
+sherlock
+__pycache__
+*.pyc
