@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -114,4 +115,122 @@
     toggleSites();
   </script>
 </body>
+=======
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sherlock — Busca de Usuário</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, Arial, sans-serif; max-width: 860px; margin: 36px auto; padding: 0 16px; }
+    h1 { margin: 0 0 8px; }
+    p.sub { color: #666; margin-top: 0; }
+    form .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    input[type=text]{ flex:1; padding: 10px; border: 1px solid #ccc; border-radius: 10px; min-width: 220px; }
+    button{ padding: 10px 16px; border: 0; border-radius: 10px; cursor: pointer; background:#111; color:#fff; }
+    .card{ margin-top: 16px; padding: 14px 16px; border:1px solid #e5e5e5; border-radius:12px; }
+    .error{ border-color:#f3c2c2; background:#fff7f7; color:#900; }
+    .muted{ color:#666; }
+    .sites{ display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 6px 10px; margin-top: 8px; }
+    .badge{ display:inline-block; padding:6px 10px; border:1px solid #e5e5e5; border-radius:999px; font-size:14px; }
+    table{ width:100%; border-collapse: collapse; margin-top: 8px; }
+    th, td{ padding: 8px 10px; border-bottom:1px solid #eee; text-align: left; }
+    details summary{ cursor:pointer; }
+    code{ background: rgba(125,125,125,.08); padding:2px 6px; border-radius:6px; }
+    small { color:#666; }
+    .row .right { margin-left: auto; display: flex; align-items:center; gap:10px; }
+    .switch{ display: inline-flex; align-items:center; gap:8px; }
+    .switch input{ transform: scale(1.1); }
+  </style>
+</head>
+<body>
+  <h1>Sherlock — Busca de Usuário</h1>
+  <p class="sub">Pesquise um nome de usuário em <strong>todos</strong> os sites suportados, ou selecione alguns específicos.</p>
+
+  <form method="post" class="card">
+    <div class="row">
+      <input type="text" name="username" placeholder="ex: daniel.churros" value="{{ username|e }}" />
+      <button type="submit">Pesquisar</button>
+    </div>
+
+    <div class="row" style="margin-top:8px;">
+      <label class="badge">
+        <input type="radio" name="mode" value="all" {% if search_all %}checked{% endif %} />
+        Pesquisar em todos os sites
+      </label>
+      <label class="badge">
+        <input type="radio" name="mode" value="custom" {% if not search_all %}checked{% endif %} />
+        Escolher sites específicos
+      </label>
+
+      <div class="right switch">
+        <label for="debug">Mostrar diagnóstico</label>
+        <input type="checkbox" id="debug" name="debug" {% if debug %}checked{% endif %} />
+      </div>
+    </div>
+
+    <div id="sitesWrap" class="sites" style="margin-top:6px; {% if search_all %}display:none{% endif %}">
+      {% for s in known_sites %}
+      <label>
+        <input type="checkbox" name="sites" value="{{ s }}" {% if s in selected_sites %}checked{% endif %} />
+        {{ s }}
+      </label>
+      {% endfor %}
+    </div>
+  </form>
+
+  {% if error %}
+    <div class="card error">{{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+    <div class="card">
+      <strong>Resultados para <code>{{ username|e }}</code>:</strong>
+      {% if result.results and result.results|length > 0 %}
+        <table>
+          <thead><tr><th>Site</th><th>URL</th></tr></thead>
+          <tbody>
+            {% for r in result.results %}
+              <tr>
+                <td>{{ r.site }}</td>
+                <td><a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.url }}</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">Nenhuma ocorrência encontrada pelos sites consultados.</p>
+      {% endif %}
+
+      {% if debug %}
+      <details style="margin-top:10px;">
+        <summary>Ver detalhes técnicos</summary>
+        <p><strong>Comando:</strong> <code>{{ result.cmd }}</code></p>
+        <p><strong>Return code:</strong> {{ result.returncode }}</p>
+        <p><strong>STDOUT:</strong><br><pre>{{ result.stdout }}</pre></p>
+        <p><strong>STDERR:</strong><br><pre>{{ result.stderr }}</pre></p>
+      </details>
+      {% endif %}
+      <div style="margin-top:8px;">
+        <small>Obs.: resultados variam conforme disponibilidade dos sites, limites/anti-bot e tempo de resposta. Use com responsabilidade.</small>
+      </div>
+    </div>
+  {% endif %}
+
+  <script>
+    // alterna exibição da lista de sites quando muda o modo
+    const all = document.querySelector('input[name="mode"][value="all"]');
+    const custom = document.querySelector('input[name="mode"][value="custom"]');
+    const wrap = document.getElementById('sitesWrap');
+
+    function toggleSites(){
+      wrap.style.display = all.checked ? 'none' : 'grid';
+    }
+    [all, custom].forEach(el => el && el.addEventListener('change', toggleSites));
+    toggleSites();
+  </script>
+</body>
+>>>>>>> 1d7e3004feee43bdbf43c87c4790b6e4c32cf12f
 </html>
