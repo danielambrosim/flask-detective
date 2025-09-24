@@ -1,0 +1,7 @@
+flask
+markupsafe
+sherlock-project
+requests
+colorama
+lxml
+beautifulsoup4
