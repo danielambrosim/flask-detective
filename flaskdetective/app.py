@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(__file__)
 CANDIDATES = [
-    os.path.join(BASE_DIR, "sherlock", "sherlock", "sherlock.py"),  # caso igual ao seu
+    os.path.join(BASE_DIR, "sherlock", "sherlock_project", "sherlock.py"),  # seu caso atual
     os.path.join(BASE_DIR, "sherlock", "sherlock.py"),
     os.path.join(BASE_DIR, "sherlock-master", "sherlock.py"),
 ]
