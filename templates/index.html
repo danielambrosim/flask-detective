@@ -5,26 +5,153 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sherlock — Busca de Usuário</title>
   <style>
+    /* Estilos existentes melhorados */
     :root { color-scheme: light dark; }
-    body { font-family: system-ui, Arial, sans-serif; max-width: 860px; margin: 36px auto; padding: 0 16px; }
+    body { 
+      font-family: system-ui, Arial, sans-serif; 
+      max-width: 860px; 
+      margin: 36px auto; 
+      padding: 0 16px; 
+      line-height: 1.5;
+    }
     h1 { margin: 0 0 8px; }
     p.sub { color: #666; margin-top: 0; }
-    form .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    input[type=text]{ flex:1; padding: 10px; border: 1px solid #ccc; border-radius: 10px; min-width: 220px; }
-    button{ padding: 10px 16px; border: 0; border-radius: 10px; cursor: pointer; background:#111; color:#fff; }
-    .card{ margin-top: 16px; padding: 14px 16px; border:1px solid #e5e5e5; border-radius:12px; }
-    .error{ border-color:#f3c2c2; background:#fff7f7; color:#900; }
+    form .row { 
+      display: flex; 
+      gap: 8px; 
+      align-items: center; 
+      flex-wrap: wrap; 
+      margin-bottom: 8px;
+    }
+    input[type="text"]{ 
+      flex:1; 
+      padding: 10px; 
+      border: 1px solid #ccc; 
+      border-radius: 10px; 
+      min-width: 220px; 
+      font-size: 16px; /* Melhora a acessibilidade em mobile */
+    }
+    button{ 
+      padding: 10px 16px; 
+      border: 0; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      background:#111; 
+      color:#fff; 
+      font-size: 16px;
+    }
+    button:hover { background: #333; }
+    button:disabled { 
+      background: #ccc; 
+      cursor: not-allowed; 
+    }
+    .card{ 
+      margin-top: 16px; 
+      padding: 14px 16px; 
+      border:1px solid #e5e5e5; 
+      border-radius:12px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .error{ 
+      border-color:#f3c2c2; 
+      background:#fff7f7; 
+      color:#900; 
+      padding: 12px;
+    }
     .muted{ color:#666; }
-    .sites{ display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 6px 10px; margin-top: 8px; }
-    .badge{ display:inline-block; padding:6px 10px; border:1px solid #e5e5e5; border-radius:999px; font-size:14px; }
+    .sites{ 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); 
+      gap: 6px 10px; 
+      margin-top: 8px; 
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+    }
+    .badge{ 
+      display:inline-flex; 
+      align-items: center;
+      gap: 6px;
+      padding:6px 10px; 
+      border:1px solid #e5e5e5; 
+      border-radius:999px; 
+      font-size:14px; 
+      cursor: pointer;
+    }
+    .badge:hover { background: #f5f5f5; }
     table{ width:100%; border-collapse: collapse; margin-top: 8px; }
     th, td{ padding: 8px 10px; border-bottom:1px solid #eee; text-align: left; }
-    details summary{ cursor:pointer; }
-    code{ background: rgba(125,125,125,.08); padding:2px 6px; border-radius:6px; }
-    small { color:#666; }
+    th { background: #f9f9f9; font-weight: 600; }
+    details summary{ cursor:pointer; padding: 8px 0; }
+    code{ background: rgba(125,125,125,.08); padding:2px 6px; border-radius:6px; font-family: monospace; }
+    small { color:#666; font-size: 12px; }
     .row .right { margin-left: auto; display: flex; align-items:center; gap:10px; }
     .switch{ display: inline-flex; align-items:center; gap:8px; }
     .switch input{ transform: scale(1.1); }
+    
+    /* Estilos melhorados para a barra de progresso */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: opacity 0.3s ease, visibility 0.3s;
+    }
+    #loading-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .spinner-container {
+      text-align: center;
+      color: #fff;
+      background: #333;
+      padding: 30px;
+      border-radius: 12px;
+      min-width: 300px;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 10px;
+      background-color: #444;
+      border-radius: 5px;
+      margin-top: 15px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #007bff, #00c6ff);
+      transition: width 0.5s ease-in-out;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      body { margin: 20px auto; }
+      .row { flex-direction: column; align-items: stretch; }
+      .row .right { margin-left: 0; justify-content: flex-start; }
+      input[type="text"] { min-width: auto; }
+    }
   </style>
 </head>
 <body>
@@ -33,11 +160,11 @@
 
   <form method="post" class="card" id="search-form">
     <div class="row">
-      <input type="text" name="username" placeholder="ex: daniel.churros" value="{{ username|e }}" />
-      <button type="submit">Pesquisar</button>
+      <input type="text" name="username" placeholder="ex: daniel.churros" value="{{ username|e }}" required />
+      <button type="submit" id="submit-btn">Pesquisar</button>
     </div>
 
-    <div class="row" style="margin-top:8px;">
+    <div class="row">
       <label class="badge">
         <input type="radio" name="mode" value="all" {% if search_all %}checked{% endif %} />
         Pesquisar em todos os sites
@@ -53,9 +180,9 @@
       </div>
     </div>
 
-    <div id="sitesWrap" class="sites" style="margin-top:6px; {% if search_all %}display:none{% endif %}">
+    <div id="sitesWrap" class="sites" style="{% if search_all %}display:none{% endif %}">
       {% for s in known_sites %}
-      <label>
+      <label style="display: flex; align-items: center; gap: 6px;">
         <input type="checkbox" name="sites" value="{{ s }}" {% if s in selected_sites %}checked{% endif %} />
         {{ s }}
       </label>
@@ -65,18 +192,15 @@
 
   <div id="loading-overlay" class="hidden">
     <div class="spinner-container">
-        <div class="spinner-border text-light" role="status"> 
-            <span class="sr-only">Carregando...</span>
-        </div>
-        
-        <p class="mt-3" style="color:#fff;">Carregando...</p>
-        <p class="mt-1" style="color:#fff;">Aguarde, a busca pode levar alguns segundos...</p>
-
-        <div class="progress-bar-container">
-            <div id="progress-bar" class="progress-bar"></div>
-        </div>
+      <div class="spinner" role="status"></div>
+      <p class="mt-3">Carregando...</p>
+      <p id="status-message">Aguarde, a busca pode levar alguns segundos...</p>
+      
+      <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
     </div>
-</div>
+  </div>
 
   {% if error %}
     <div class="card error">{{ error }}</div>
@@ -87,16 +211,24 @@
       <strong>Resultados para <code>{{ username|e }}</code>:</strong>
       {% if result.results and result.results|length > 0 %}
         <table>
-          <thead><tr><th>Site</th><th>URL</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Site</th>
+              <th>URL</th>
+              <th>Status</th>
+            </tr>
+          </thead>
           <tbody>
             {% for r in result.results %}
               <tr>
                 <td>{{ r.site }}</td>
-                <td><a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.url }}</a></td>
+                <td><a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.url }}</a></td>
+                <td>✅ Encontrado</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
+        <p><small>Total: {{ result.results|length }} resultado(s) encontrado(s)</small></p>
       {% else %}
         <p class="muted">Nenhuma ocorrência encontrada pelos sites consultados.</p>
       {% endif %}
@@ -117,16 +249,120 @@
   {% endif %}
 
   <script>
-    // alterna exibição da lista de sites quando muda o modo
-    const all = document.querySelector('input[name="mode"][value="all"]');
-    const custom = document.querySelector('input[name="mode"][value="custom"]');
-    const wrap = document.getElementById('sitesWrap');
-
-    function toggleSites(){
-      wrap.style.display = all.checked ? 'none' : 'grid';
+    // Elementos DOM
+    const searchForm = document.getElementById('search-form');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const progressBar = document.getElementById('progress-bar');
+    const statusMessage = document.getElementById('status-message');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Controles de modo de pesquisa
+    const allRadio = document.querySelector('input[name="mode"][value="all"]');
+    const customRadio = document.querySelector('input[name="mode"][value="custom"]');
+    const sitesWrap = document.getElementById('sitesWrap');
+    
+    // Validação do formulário
+    function validateForm() {
+      const username = document.querySelector('input[name="username"]').value.trim();
+      const isCustomMode = customRadio.checked;
+      const hasSelectedSites = isCustomMode ? 
+        document.querySelectorAll('input[name="sites"]:checked').length > 0 : true;
+      
+      if (!username) {
+        alert('Por favor, insira um nome de usuário');
+        return false;
+      }
+      
+      if (isCustomMode && !hasSelectedSites) {
+        alert('Por favor, selecione pelo menos um site');
+        return false;
+      }
+      
+      return true;
     }
-    [all, custom].forEach(el => el && el.addEventListener('change', toggleSites));
+    
+    // Barra de progresso
+    let progressInterval;
+    
+    function startProgress() {
+      loadingOverlay.classList.remove('hidden');
+      submitBtn.disabled = true;
+      
+      let progress = 0;
+      progressBar.style.width = '0%';
+      
+      progressInterval = setInterval(() => {
+        if (progress < 85) { // Para em 85% para aguardar resposta real
+          progress += 2;
+          progressBar.style.width = progress + '%';
+          
+          // Atualizar mensagem baseada no progresso
+          if (progress < 30) {
+            statusMessage.textContent = 'Iniciando busca...';
+          } else if (progress < 60) {
+            statusMessage.textContent = 'Verificando sites...';
+          } else {
+            statusMessage.textContent = 'Processando resultados...';
+          }
+        }
+      }, 300);
+    }
+    
+    function stopProgress() {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      progressBar.style.width = '100%';
+      setTimeout(() => {
+        loadingOverlay.classList.add('hidden');
+        submitBtn.disabled = false;
+      }, 500);
+    }
+    
+    // Evento de submit do formulário
+    searchForm.addEventListener('submit', (e) => {
+      if (!validateForm()) {
+        e.preventDefault();
+        return;
+      }
+      
+      startProgress();
+      
+      // Se a página recarregar, o progresso para naturalmente
+      // Para uma implementação real com AJAX, usaríamos fetch()
+    });
+    
+    // Alternar visibilidade dos sites
+    function toggleSites() {
+      sitesWrap.style.display = allRadio.checked ? 'none' : 'grid';
+      
+      // Validação visual
+      if (customRadio.checked) {
+        sitesWrap.style.border = '1px solid #e5e5e5';
+      }
+    }
+    
+    [allRadio, customRadio].forEach(el => {
+      if (el) el.addEventListener('change', toggleSites);
+    });
+    
+    // Inicializar
     toggleSites();
+    
+    // Prevenir múltiplos envios
+    let formSubmitted = false;
+    searchForm.addEventListener('submit', () => {
+      if (formSubmitted) {
+        event.preventDefault();
+      } else {
+        formSubmitted = true;
+      }
+    });
+    
+    // Restaurar estado quando a página carregar (útil para refresh)
+    window.addEventListener('load', () => {
+      submitBtn.disabled = false;
+    });
   </script>
 </body>
 </html>
