@@ -63,6 +63,19 @@
     </div>
   </form>
 
+  ## Loading Spinner
+  <div class="spinner-container">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Carregando...</span>
+    </div>
+    <p class="mt-3">Analisando o arquivo, por favor aguarde...</p>
+</div>
+</div>
+
+<form id="search-form" method="POST" action="/search">
+<button type="submit" class="btn btn-primary">Buscar Keywords</button>
+</form>
+
   {% if error %}
     <div class="card error">{{ error }}</div>
   {% endif %}
