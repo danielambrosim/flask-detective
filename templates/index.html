@@ -31,7 +31,7 @@
   <h1>Sherlock — Busca de Usuário</h1>
   <p class="sub">Pesquise um nome de usuário em <strong>todos</strong> os sites suportados, ou selecione alguns específicos.</p>
 
-  <form method="post" class="card">
+  <form method="post" class="card" id="search-form">
     <div class="row">
       <input type="text" name="username" placeholder="ex: daniel.churros" value="{{ username|e }}" />
       <button type="submit">Pesquisar</button>
@@ -63,18 +63,20 @@
     </div>
   </form>
 
-  ## Loading Spinner
-  <div class="spinner-container">
-    <div class="spinner-border text-primary" role="status">
-        <span class="sr-only">Carregando...</span>
-    </div>
-    <p class="mt-3">Analisando o arquivo, por favor aguarde...</p>
-</div>
-</div>
+  <div id="loading-overlay" class="hidden">
+    <div class="spinner-container">
+        <div class="spinner-border text-light" role="status"> 
+            <span class="sr-only">Carregando...</span>
+        </div>
+        
+        <p class="mt-3" style="color:#fff;">Carregando...</p>
+        <p class="mt-1" style="color:#fff;">Aguarde, a busca pode levar alguns segundos...</p>
 
-<form id="search-form" method="POST" action="/search">
-<button type="submit" class="btn btn-primary">Buscar Keywords</button>
-</form>
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+    </div>
+</div>
 
   {% if error %}
     <div class="card error">{{ error }}</div>
