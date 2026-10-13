@@ -1,135 +1,113 @@
-import os, sys, subprocess, re, html
-from flask import Flask, render_template, request
-from markupsafe import Markup
+import os
 
-app = Flask(__name__)
+from flask import Flask, jsonify, render_template, request
 
-BASE_DIR = os.path.dirname(__file__)
-CANDIDATES = [
-    os.path.join(BASE_DIR, "sherlock", "sherlock_project", "sherlock.py"),  # seu caso atual
-    os.path.join(BASE_DIR, "sherlock", "sherlock.py"),
-    os.path.join(BASE_DIR, "sherlock-master", "sherlock.py"),
-]
-SHERLOCK_PATH = next((p for p in CANDIDATES if os.path.isfile(p)), None)
-if not SHERLOCK_PATH:
-    raise RuntimeError("Não encontrei sherlock.py. Coloque o repositório em ./sherlock/")
+from sherlock_service import (
+    MAX_SELECTED_SITES,
+    SearchManager,
+    SiteCatalog,
+    TooManySearches,
+    ValidationError,
+    normalize_sites,
+    normalize_username,
+)
 
-USERNAME_RE = re.compile(r'^[A-Za-z0-9._-]{1,50}$')  # username genérico
 
-# Lista “curta” de sites com nomes como o Sherlock entende (sensível a maiúsculas em alguns casos)
-KNOWN_SITES = [
-    "Instagram", "Twitter", "TikTok", "GitHub", "Reddit",
-    "Facebook", "YouTube", "Medium", "Pinterest", "DeviantArt"
-]
+def create_app(manager: SearchManager | None = None) -> Flask:
+    app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
 
-def run_sherlock(username: str, sites: list[str] | None, timeout_s: int = 25) -> dict:
-    """
-    Roda o Sherlock; se 'sites' vier vazio/None, pesquisa em todos.
-    Retorna dict com urls encontradas e stdout/stderr para diagnóstico.
-    """
-    env = os.environ.copy()
-    # alguns ambientes dão menos problema com HTTP/1.1
-    env.setdefault("GIT_HTTP_VERSION", "HTTP/1.1")
+    if manager is None:
+        manager = SearchManager(
+            SiteCatalog(),
+            max_workers=int(os.environ.get("SEARCH_WORKERS", 2)),
+            site_timeout=int(os.environ.get("SITE_TIMEOUT", 15)),
+        )
+    app.extensions["search_manager"] = manager
+    catalog = manager.catalog
 
-    cmd = [sys.executable, SHERLOCK_PATH, username, "--print-found", "--timeout", str(timeout_s)]
+    def client_id() -> str:
+        # Atrás de proxy (Render), o IP real vem no primeiro X-Forwarded-For.
+        fwd = request.headers.get("X-Forwarded-For", "")
+        return (fwd.split(",")[0].strip() if fwd else request.remote_addr) or "?"
 
-    if sites:
-        # o Sherlock aceita repetir --site para filtrar; nomes devem bater com o catálogo interno
-        for s in sites:
-            s_clean = s.strip()
-            if s_clean:
-                cmd += ["--site", s_clean]
+    @app.get("/")
+    def index():
+        return render_template(
+            "index.html",
+            total_sites=len(catalog),
+            popular_sites=catalog.popular(),
+            all_sites=catalog.names(),
+            max_sites=MAX_SELECTED_SITES,
+        )
 
-    run = subprocess.run(cmd, capture_output=True, text=True, check=False, env=env)
-    stdout = (run.stdout or "").strip()
-    stderr = (run.stderr or "").strip()
+    @app.get("/healthz")
+    def healthz():
+        return {"status": "ok", "sites": len(catalog)}
 
-    # Extrair URLs encontradas (linhas que contenham http/https)
-    urls = []
-    for line in stdout.splitlines():
-        line = line.strip()
-        i = line.find("http")
-        if i != -1:
-            url = line[i:].strip()
-            # heurística leve: filtra lixo e duplica
-            if url.startswith(("http://", "https://")) and len(url) < 2048:
-                urls.append(url)
+    @app.post("/api/search")
+    def start_search():
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            return jsonify(error="Requisição inválida."), 400
+        sites = payload.get("sites")
+        if sites is not None and not (isinstance(sites, list) and all(isinstance(s, str) for s in sites)):
+            return jsonify(error="Lista de sites inválida."), 400
+        try:
+            username = normalize_username(payload.get("username") if isinstance(payload.get("username"), str) else None)
+            selected = normalize_sites(catalog, payload.get("mode"), sites)
+            job = manager.start(username, selected, owner=client_id())
+        except ValidationError as exc:
+            return jsonify(error=str(exc)), 400
+        except TooManySearches as exc:
+            return jsonify(error=str(exc)), 429
+        return jsonify(job.to_dict()), 202
 
-    # dedup mantendo ordem
-    seen = set()
-    unique_urls = []
-    for u in urls:
-        if u not in seen:
-            seen.add(u)
-            unique_urls.append(u)
+    @app.get("/api/search/<job_id>")
+    def search_status(job_id: str):
+        job = manager.get(job_id)
+        if job is None:
+            return jsonify(error="Busca não encontrada ou expirada."), 404
+        return jsonify(job.to_dict())
 
-    # tentar inferir nome do site a partir do domínio (só pra exibir bonitinho)
-    def site_label(u: str) -> str:
-        # pega domínio base
-        m = re.search(r'https?://([^/]+)/?', u)
-        host = m.group(1).lower() if m else ""
-        mapping = {
-            "instagram.com": "Instagram",
-            "twitter.com": "Twitter",
-            "x.com": "Twitter",
-            "tiktok.com": "TikTok",
-            "github.com": "GitHub",
-            "reddit.com": "Reddit",
-            "facebook.com": "Facebook",
-            "m.facebook.com": "Facebook",
-            "youtube.com": "YouTube",
-            "medium.com": "Medium",
-            "pinterest.com": "Pinterest",
-            "deviantart.com": "DeviantArt",
-        }
-        for k, v in mapping.items():
-            if host.endswith(k):
-                return v
-        return host or "Site"
+    @app.errorhandler(404)
+    def not_found(_):
+        if request.path.startswith("/api/"):
+            return jsonify(error="Recurso não encontrado."), 404
+        return render_template("404.html"), 404
 
-    results = [{"site": site_label(u), "url": u} for u in unique_urls]
+    @app.errorhandler(405)
+    def method_not_allowed(_):
+        return jsonify(error="Método não permitido."), 405
 
-    return {
-        "ok": run.returncode == 0 or bool(results),  # alguns sites não achados retornam rc != 0
-        "results": results,
-        "stdout": stdout,
-        "stderr": stderr,
-        "returncode": run.returncode,
-        "cmd": " ".join(cmd),
-    }
+    @app.errorhandler(413)
+    def too_large(_):
+        return jsonify(error="Requisição muito grande."), 413
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    data = {
-        "username": "",
-        "selected_sites": [],
-        "search_all": True,
-        "known_sites": KNOWN_SITES,
-        "result": None,
-        "error": None,
-        "debug": False,
-    }
+    @app.after_request
+    def security_headers(resp):
+        resp.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; img-src 'self' data: https://www.google.com https://*.gstatic.com; "
+            "style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; "
+            "script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+        )
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("X-Frame-Options", "DENY")
+        resp.headers.setdefault("Referrer-Policy", "no-referrer")
+        if request.path.startswith("/api/"):
+            resp.headers.setdefault("Cache-Control", "no-store")
+        return resp
 
-    if request.method == "POST":
-        data["username"] = (request.form.get("username") or "").strip().lstrip("@")
-        data["search_all"] = (request.form.get("mode") == "all")
-        data["selected_sites"] = request.form.getlist("sites")
-        data["debug"] = (request.form.get("debug") == "on")
+    return app
 
-        if not data["username"]:
-            data["error"] = "Digite um nome de usuário."
-        elif not USERNAME_RE.match(data["username"]):
-            data["error"] = "Usuário inválido. Use letras, números, ponto, hífen e underline."
-        else:
-            sites = None if data["search_all"] else data["selected_sites"]
-            r = run_sherlock(data["username"], sites=sites, timeout_s=30)
-            if not r.get("ok") and not r.get("results"):
-                data["error"] = "Não foi possível obter resultados. Veja detalhes de diagnóstico abaixo."
-            else:
-                data["result"] = r
 
-    return render_template("index.html", **data)
+app = create_app()
 
 if __name__ == "__main__":
-    # Rode: python app.py
-    app.run(host="0.0.0.0", port=5000, debug=True)  
+    # Rode: python app.py  (o modo debug só liga com FLASK_DEBUG=1)
+    app.run(
+        host=os.environ.get("HOST", "127.0.0.1"),
+        port=int(os.environ.get("PORT", 5000)),
+        debug=os.environ.get("FLASK_DEBUG") == "1",
+    )

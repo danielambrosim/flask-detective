@@ -1,4 +1,8 @@
-venv
-sherlock
-__pycache__
-.venv
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# arquivos que o CLI do Sherlock gera
+*.txt
+!requirements*.txt

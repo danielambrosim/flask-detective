@@ -1,368 +1,177 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sherlock — Busca de Usuário</title>
-  <style>
-    /* Estilos existentes melhorados */
-    :root { color-scheme: light dark; }
-    body { 
-      font-family: system-ui, Arial, sans-serif; 
-      max-width: 860px; 
-      margin: 36px auto; 
-      padding: 0 16px; 
-      line-height: 1.5;
-    }
-    h1 { margin: 0 0 8px; }
-    p.sub { color: #666; margin-top: 0; }
-    form .row { 
-      display: flex; 
-      gap: 8px; 
-      align-items: center; 
-      flex-wrap: wrap; 
-      margin-bottom: 8px;
-    }
-    input[type="text"]{ 
-      flex:1; 
-      padding: 10px; 
-      border: 1px solid #ccc; 
-      border-radius: 10px; 
-      min-width: 220px; 
-      font-size: 16px; /* Melhora a acessibilidade em mobile */
-    }
-    button{ 
-      padding: 10px 16px; 
-      border: 0; 
-      border-radius: 10px; 
-      cursor: pointer; 
-      background:#111; 
-      color:#fff; 
-      font-size: 16px;
-    }
-    button:hover { background: #333; }
-    button:disabled { 
-      background: #ccc; 
-      cursor: not-allowed; 
-    }
-    .card{ 
-      margin-top: 16px; 
-      padding: 14px 16px; 
-      border:1px solid #e5e5e5; 
-      border-radius:12px; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .error{ 
-      border-color:#f3c2c2; 
-      background:#fff7f7; 
-      color:#900; 
-      padding: 12px;
-    }
-    .muted{ color:#666; }
-    .sites{ 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); 
-      gap: 6px 10px; 
-      margin-top: 8px; 
-      max-height: 200px;
-      overflow-y: auto;
-      padding: 8px;
-      border: 1px solid #e5e5e5;
-      border-radius: 8px;
-    }
-    .badge{ 
-      display:inline-flex; 
-      align-items: center;
-      gap: 6px;
-      padding:6px 10px; 
-      border:1px solid #e5e5e5; 
-      border-radius:999px; 
-      font-size:14px; 
-      cursor: pointer;
-    }
-    .badge:hover { background: #f5f5f5; }
-    table{ width:100%; border-collapse: collapse; margin-top: 8px; }
-    th, td{ padding: 8px 10px; border-bottom:1px solid #eee; text-align: left; }
-    th { background: #f9f9f9; font-weight: 600; }
-    details summary{ cursor:pointer; padding: 8px 0; }
-    code{ background: rgba(125,125,125,.08); padding:2px 6px; border-radius:6px; font-family: monospace; }
-    small { color:#666; font-size: 12px; }
-    .row .right { margin-left: auto; display: flex; align-items:center; gap:10px; }
-    .switch{ display: inline-flex; align-items:center; gap:8px; }
-    .switch input{ transform: scale(1.1); }
-    
-    /* Estilos melhorados para a barra de progresso */
-    #loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      transition: opacity 0.3s ease, visibility 0.3s;
-    }
-    #loading-overlay.hidden {
-      opacity: 0;
-      visibility: hidden;
-    }
-    .spinner-container {
-      text-align: center;
-      color: #fff;
-      background: #333;
-      padding: 30px;
-      border-radius: 12px;
-      min-width: 300px;
-    }
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top: 4px solid #fff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .progress-bar-container {
-      width: 100%;
-      height: 10px;
-      background-color: #444;
-      border-radius: 5px;
-      margin-top: 15px;
-      overflow: hidden;
-    }
-    .progress-bar {
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, #007bff, #00c6ff);
-      transition: width 0.5s ease-in-out;
-    }
-    
-    /* Responsividade */
-    @media (max-width: 768px) {
-      body { margin: 20px auto; }
-      .row { flex-direction: column; align-items: stretch; }
-      .row .right { margin-left: 0; justify-content: flex-start; }
-      input[type="text"] { min-width: auto; }
-    }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Pesquise um nome de usuário em mais de {{ total_sites }} sites e redes sociais.">
+  <meta name="theme-color" content="#ffffff">
+  <title>Detective — Busca de usuários</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>
 <body>
-  <h1>Sherlock — Busca de Usuário</h1>
-  <p class="sub">Pesquise um nome de usuário em <strong>todos</strong> os sites suportados, ou selecione alguns específicos.</p>
+  <a class="skip-link" href="#busca">Pular para a busca</a>
 
-  <form method="post" class="card" id="search-form">
-    <div class="row">
-      <input type="text" name="username" placeholder="ex: daniel.churros" value="{{ username|e }}" required />
-      <button type="submit" id="submit-btn">Pesquisar</button>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="Detective, página inicial">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
+        DETECTIVE
+      </a>
+      <nav class="main-nav" aria-label="Principal">
+        <a href="#busca">Buscar</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#responsabilidade">Uso responsável</a>
+      </nav>
+      <a class="btn btn-dark btn-sm header-cta" href="#busca">Pesquisar</a>
     </div>
+  </header>
 
-    <div class="row">
-      <label class="badge">
-        <input type="radio" name="mode" value="all" {% if search_all %}checked{% endif %} />
-        Pesquisar em todos os sites
-      </label>
-      <label class="badge">
-        <input type="radio" name="mode" value="custom" {% if not search_all %}checked{% endif %} />
-        Escolher sites específicos
-      </label>
+  <main>
+    <section class="hero" id="busca">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">OSINT · Powered by Sherlock</p>
+          <h1>Encontre perfis.<br>Em segundos.</h1>
+          <p class="lead">Pesquise um nome de usuário em <strong>{{ total_sites }} sites</strong> e redes sociais de uma só vez.</p>
 
-      <div class="right switch">
-        <label for="debug">Mostrar diagnóstico</label>
-        <input type="checkbox" id="debug" name="debug" {% if debug %}checked{% endif %} />
+          <form id="search-form" class="search-card" novalidate>
+            <div class="search-field">
+              <label for="username" class="visually-hidden">Nome de usuário</label>
+              <span class="at" aria-hidden="true">@</span>
+              <input id="username" name="username" type="text" inputmode="text" autocomplete="off"
+                     autocapitalize="off" spellcheck="false" maxlength="51"
+                     placeholder="nome.de.usuario" required aria-describedby="form-error">
+              <button type="submit" class="btn btn-primary" id="submit-btn">
+                <span class="btn-label">Pesquisar</span>
+                <span class="btn-spinner" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <div class="tabs" role="radiogroup" aria-label="Onde pesquisar">
+              <label class="tab"><input type="radio" name="mode" value="all" checked><span>Todos os sites</span></label>
+              <label class="tab"><input type="radio" name="mode" value="custom"><span>Escolher sites</span></label>
+            </div>
+
+            <p id="form-error" class="form-error" role="alert" hidden></p>
+
+            <fieldset id="site-picker" class="site-picker" data-max="{{ max_sites }}" hidden>
+              <legend class="visually-hidden">Sites para pesquisar</legend>
+              <div class="picker-head">
+                <p class="picker-title">Populares</p>
+                <p class="picker-count"><span id="selected-count">0</span> selecionado(s) · máx. {{ max_sites }}
+                  <button type="button" class="link-btn" id="clear-sites">Limpar</button></p>
+              </div>
+              <div class="chips" id="popular-chips">
+                {% for s in popular_sites %}
+                <button type="button" class="chip" data-site="{{ s }}" aria-pressed="false">{{ s }}</button>
+                {% endfor %}
+              </div>
+
+              <label for="site-filter" class="picker-title">Todos os sites</label>
+              <input id="site-filter" class="filter-input" type="search" placeholder="Filtrar entre {{ total_sites }} sites…" autocomplete="off">
+              <div class="site-list" id="site-list">
+                {% for s in all_sites %}
+                <label class="site-option" data-name="{{ s|lower }}"><input type="checkbox" name="sites" value="{{ s }}"><span>{{ s }}</span></label>
+                {% endfor %}
+                <p class="empty-filter" id="empty-filter" hidden>Nenhum site com esse nome.</p>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+
+        <div class="hero-art" aria-hidden="true">
+          <div class="orb orb-1"></div>
+          <div class="orb orb-2"></div>
+          <div class="lens">
+            <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
+          </div>
+          <div class="float-card fc-1"><span class="dot ok"></span>GitHub</div>
+          <div class="float-card fc-2"><span class="dot ok"></span>Reddit</div>
+          <div class="float-card fc-3"><span class="dot"></span>Medium</div>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div id="sitesWrap" class="sites" style="{% if search_all %}display:none{% endif %}">
-      {% for s in known_sites %}
-      <label style="display: flex; align-items: center; gap: 6px;">
-        <input type="checkbox" name="sites" value="{{ s }}" {% if s in selected_sites %}checked{% endif %} />
-        {{ s }}
-      </label>
-      {% endfor %}
-    </div>
-  </form>
-
-  <div id="loading-overlay" class="hidden">
-    <div class="spinner-container">
-      <div class="spinner" role="status"></div>
-      <p class="mt-3">Carregando...</p>
-      <p id="status-message">Aguarde, a busca pode levar alguns segundos...</p>
-      
-      <div class="progress-bar-container">
-        <div id="progress-bar" class="progress-bar"></div>
+    <section class="results-section container" id="resultados" hidden aria-labelledby="results-title">
+      <div class="results-head">
+        <div>
+          <p class="eyebrow" id="results-eyebrow">Buscando</p>
+          <h2 id="results-title">Resultados para <span id="results-user"></span></h2>
+        </div>
+        <div class="results-actions" id="results-actions" hidden>
+          <button type="button" class="btn btn-outline btn-sm" id="copy-links">Copiar links</button>
+          <button type="button" class="btn btn-dark btn-sm" id="download-csv">Baixar CSV</button>
+        </div>
       </div>
-    </div>
-  </div>
 
-  {% if error %}
-    <div class="card error">{{ error }}</div>
-  {% endif %}
-
-  {% if result %}
-    <div class="card">
-      <strong>Resultados para <code>{{ username|e }}</code>:</strong>
-      {% if result.results and result.results|length > 0 %}
-        <table>
-          <thead>
-            <tr>
-              <th>Site</th>
-              <th>URL</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in result.results %}
-              <tr>
-                <td>{{ r.site }}</td>
-                <td><a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.url }}</a></td>
-                <td>✅ Encontrado</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <p><small>Total: {{ result.results|length }} resultado(s) encontrado(s)</small></p>
-      {% else %}
-        <p class="muted">Nenhuma ocorrência encontrada pelos sites consultados.</p>
-      {% endif %}
-
-      {% if debug %}
-      <details style="margin-top:10px;">
-        <summary>Ver detalhes técnicos</summary>
-        <p><strong>Comando:</strong> <code>{{ result.cmd }}</code></p>
-        <p><strong>Return code:</strong> {{ result.returncode }}</p>
-        <p><strong>STDOUT:</strong><br><pre>{{ result.stdout }}</pre></p>
-        <p><strong>STDERR:</strong><br><pre>{{ result.stderr }}</pre></p>
-      </details>
-      {% endif %}
-      <div style="margin-top:8px;">
-        <small>Obs.: resultados variam conforme disponibilidade dos sites, limites/anti-bot e tempo de resposta. Use com responsabilidade.</small>
+      <div class="progress" id="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progresso da busca">
+        <div class="progress-bar" id="progress-bar"></div>
       </div>
-    </div>
-  {% endif %}
+      <p class="progress-text" id="progress-text" aria-live="polite"></p>
 
-  <script>
-    // Elementos DOM
-    const searchForm = document.getElementById('search-form');
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const progressBar = document.getElementById('progress-bar');
-    const statusMessage = document.getElementById('status-message');
-    const submitBtn = document.getElementById('submit-btn');
-    
-    // Controles de modo de pesquisa
-    const allRadio = document.querySelector('input[name="mode"][value="all"]');
-    const customRadio = document.querySelector('input[name="mode"][value="custom"]');
-    const sitesWrap = document.getElementById('sitesWrap');
-    
-    // Validação do formulário
-    function validateForm() {
-      const username = document.querySelector('input[name="username"]').value.trim();
-      const isCustomMode = customRadio.checked;
-      const hasSelectedSites = isCustomMode ? 
-        document.querySelectorAll('input[name="sites"]:checked').length > 0 : true;
-      
-      if (!username) {
-        alert('Por favor, insira um nome de usuário');
-        return false;
-      }
-      
-      if (isCustomMode && !hasSelectedSites) {
-        alert('Por favor, selecione pelo menos um site');
-        return false;
-      }
-      
-      return true;
-    }
-    
-    // Barra de progresso
-    let progressInterval;
-    
-    function startProgress() {
-      loadingOverlay.classList.remove('hidden');
-      submitBtn.disabled = true;
-      
-      let progress = 0;
-      progressBar.style.width = '0%';
-      
-      progressInterval = setInterval(() => {
-        if (progress < 85) { // Para em 85% para aguardar resposta real
-          progress += 2;
-          progressBar.style.width = progress + '%';
-          
-          // Atualizar mensagem baseada no progresso
-          if (progress < 30) {
-            statusMessage.textContent = 'Iniciando busca...';
-          } else if (progress < 60) {
-            statusMessage.textContent = 'Verificando sites...';
-          } else {
-            statusMessage.textContent = 'Processando resultados...';
-          }
-        }
-      }, 300);
-    }
-    
-    function stopProgress() {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-      }
-      progressBar.style.width = '100%';
-      setTimeout(() => {
-        loadingOverlay.classList.add('hidden');
-        submitBtn.disabled = false;
-      }, 500);
-    }
-    
-    // Evento de submit do formulário
-    searchForm.addEventListener('submit', (e) => {
-      if (!validateForm()) {
-        e.preventDefault();
-        return;
-      }
-      
-      startProgress();
-      
-      // Se a página recarregar, o progresso para naturalmente
-      // Para uma implementação real com AJAX, usaríamos fetch()
-    });
-    
-    // Alternar visibilidade dos sites
-    function toggleSites() {
-      sitesWrap.style.display = allRadio.checked ? 'none' : 'grid';
-      
-      // Validação visual
-      if (customRadio.checked) {
-        sitesWrap.style.border = '1px solid #e5e5e5';
-      }
-    }
-    
-    [allRadio, customRadio].forEach(el => {
-      if (el) el.addEventListener('change', toggleSites);
-    });
-    
-    // Inicializar
-    toggleSites();
-    
-    // Prevenir múltiplos envios
-    let formSubmitted = false;
-    searchForm.addEventListener('submit', () => {
-      if (formSubmitted) {
-        event.preventDefault();
-      } else {
-        formSubmitted = true;
-      }
-    });
-    
-    // Restaurar estado quando a página carregar (útil para refresh)
-    window.addEventListener('load', () => {
-      submitBtn.disabled = false;
-    });
-  </script>
+      <dl class="stats">
+        <div class="stat"><dt>Encontrados</dt><dd id="stat-found">0</dd></div>
+        <div class="stat"><dt>Verificados</dt><dd id="stat-checked">0</dd></div>
+        <div class="stat"><dt>Sem resposta</dt><dd id="stat-failed">0</dd></div>
+        <div class="stat"><dt>Tempo</dt><dd id="stat-time">0s</dd></div>
+      </dl>
+
+      <div class="results-toolbar" id="results-toolbar" hidden>
+        <label for="results-filter" class="visually-hidden">Filtrar resultados</label>
+        <input id="results-filter" class="filter-input" type="search" placeholder="Filtrar resultados…" autocomplete="off">
+      </div>
+
+      <ul class="result-grid" id="result-grid"></ul>
+      <div class="empty-state" id="empty-state" hidden>
+        <h3>Nenhum perfil encontrado</h3>
+        <p>Não encontramos esse usuário nos sites consultados. Confira a grafia ou tente outros sites.</p>
+      </div>
+    </section>
+
+    <section class="features" id="como-funciona" aria-labelledby="como-title">
+      <div class="container">
+        <h2 id="como-title" class="section-title">Como funciona</h2>
+        <div class="feature-grid">
+          <article class="feature">
+            <span class="feature-num">01</span>
+            <h3>Digite o usuário</h3>
+            <p>Informe o nome de usuário exatamente como aparece nas redes, com ou sem o @.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-num">02</span>
+            <h3>Escolha onde buscar</h3>
+            <p>Pesquise em todos os {{ total_sites }} sites ou selecione apenas os que interessam — é bem mais rápido.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-num">03</span>
+            <h3>Veja os perfis</h3>
+            <p>Acompanhe o progresso em tempo real, abra os perfis encontrados e exporte os links em CSV.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="notice container" id="responsabilidade" aria-labelledby="resp-title">
+      <div class="notice-card">
+        <h2 id="resp-title">Uso responsável</h2>
+        <p>Os resultados dependem da disponibilidade dos sites, bloqueios anti-bot e tempo de resposta, e podem conter falsos positivos. Use apenas para fins legítimos, respeitando a privacidade das pessoas e a LGPD.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Detective · Interface web para o <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer">Sherlock Project</a> (MIT).</p>
+      <p class="muted">Feito com Flask.</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><div class="noscript">Ative o JavaScript para usar a busca.</div></noscript>
 </body>
 </html>
