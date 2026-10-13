@@ -1,0 +1,19 @@
+# Blueprint do Render: Dashboard > New > Blueprint > escolha este repositório.
+services:
+  - type: web
+    name: flask-detective
+    runtime: python
+    plan: free
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    # Lê o gunicorn.conf.py: 1 worker + threads (as buscas ficam em memória)
+    startCommand: gunicorn app:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SEARCH_WORKERS
+        value: "2"
+      - key: SITE_TIMEOUT
+        value: "15"

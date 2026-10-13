@@ -74,6 +74,8 @@ pytest -m online    # busca real na internet
 * **Build command:** `pip install -r requirements.txt`
 * **Start command:** `gunicorn app:app`
 
+Ou use o Blueprint: no painel do Render, **New > Blueprint** e escolha o repositório; o `render.yaml` configura tudo (plano free, health check em `/healthz`, Python 3.12).
+
 O `gunicorn.conf.py` é lido automaticamente e usa **1 worker com várias threads**: as buscas ficam em memória, então vários workers fariam o polling cair em processos que não conhecem a busca.
 
 Variáveis de ambiente opcionais: `SEARCH_WORKERS` (buscas em paralelo, padrão 2), `SITE_TIMEOUT` (segundos por site, padrão 15), `GUNICORN_THREADS` (padrão 8).
