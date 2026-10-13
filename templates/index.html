@@ -1,37 +1,8 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Pesquise um nome de usuário em mais de {{ total_sites }} sites e redes sociais.">
-  <meta name="theme-color" content="#ffffff">
-  <title>Detective — Busca de usuários</title>
-  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
-</head>
-<body>
-  <a class="skip-link" href="#busca">Pular para a busca</a>
-
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="/" aria-label="Detective, página inicial">
-        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
-        DETECTIVE
-      </a>
-      <nav class="main-nav" aria-label="Principal">
-        <a href="#busca">Buscar</a>
-        <a href="#como-funciona">Como funciona</a>
-        <a href="#responsabilidade">Uso responsável</a>
-      </nav>
-      <a class="btn btn-dark btn-sm header-cta" href="#busca">Pesquisar</a>
-    </div>
-  </header>
-
-  <main>
+{% extends "base.html" %}
+{% block title %}Detective — Busca de usuários{% endblock %}
+{% block meta %}<meta name="description" content="Pesquise um nome de usuário em mais de {{ total_sites }} sites e redes sociais.">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>{% endblock %}
+{% block content %}
     <section class="hero" id="busca">
       <div class="container hero-inner">
         <div class="hero-copy">
@@ -178,16 +149,5 @@
         <p>Os resultados dependem da disponibilidade dos sites, bloqueios anti-bot e tempo de resposta, e podem conter falsos positivos. Use apenas para fins legítimos, respeitando a privacidade das pessoas e a LGPD.</p>
       </div>
     </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <p>Detective · Interface web para o <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer">Sherlock Project</a> (MIT).</p>
-      <p class="muted">Feito com Flask.</p>
-    </div>
-  </footer>
-
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-  <noscript><div class="noscript">Ative o JavaScript para usar a busca.</div></noscript>
-</body>
-</html>
+{% endblock %}
+{% block body_end %}<noscript><div class="noscript">Ative o JavaScript para usar a busca.</div></noscript>{% endblock %}

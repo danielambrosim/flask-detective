@@ -6,3 +6,7 @@ __pycache__/
 # arquivos que o CLI do Sherlock gera
 *.txt
 !requirements*.txt
+# banco local e segredos
+instance/
+*.db
+.env

@@ -1,0 +1,15 @@
+{% macro field(f, type=None, autocomplete=None, extra=None) %}
+  {%- set attrs = {"class": "field-input", "autocomplete": autocomplete} -%}
+  {%- if f.errors %}{% set _ = attrs.update({"aria-invalid": "true", "aria-describedby": f.id ~ "-error"}) %}{% endif -%}
+  {%- if extra %}{% set _ = attrs.update(extra) %}{% endif -%}
+  <div class="field{% if f.errors %} has-error{% endif %}">
+    {{ f.label(class="field-label") }}
+    <div class="field-control">
+      {{ f(**attrs) }}
+      {% if type == "password" %}
+        <button type="button" class="pw-toggle" data-target="{{ f.id }}" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+      {% endif %}
+    </div>
+    {% if f.errors %}<p class="field-error" id="{{ f.id }}-error">{{ f.errors[0] }}</p>{% endif %}
+  </div>
+{% endmacro %}

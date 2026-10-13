@@ -11,6 +11,16 @@ Aplicação web em **Flask** que usa o **[Sherlock](https://github.com/sherlock-
 * Validação de entrada, limite de buscas simultâneas e cabeçalhos de segurança (CSP etc.).
 * **Verificação de vínculo:** escolha um perfil de referência (ex.: o Instagram que você conhece) e veja quais outros resultados estão ligados a ele.
 
+## Contas de usuário
+
+* Telas **/entrar** e **/cadastrar**, com logout em **/sair** (só POST).
+* Senhas com hash **argon2id**. O login dá a mesma resposta para senha errada e para e-mail inexistente, então não revela quais e-mails estão cadastrados.
+* Proteção **CSRF** nos formulários e na API (cabeçalho `X-CSRFToken`).
+* Limite de tentativas: 10 logins por minuto e 5 cadastros por minuto, por IP.
+* Cookies `HttpOnly` e `SameSite=Lax`; em produção também `Secure`.
+* Banco: SQLite local em `instance/detective.db` (só para desenvolvimento). Em produção, use **Postgres** via `DATABASE_URL`, porque o disco do Render gratuito é apagado a cada deploy.
+* Migrations com Flask-Migrate: `flask --app app db migrate -m "descrição"` e `flask --app app db upgrade`.
+
 ## Verificação de vínculo entre perfis
 
 O Sherlock só informa que um nome de usuário **existe** em um site, não que é a mesma pessoa. Na busca por "torvalds", por exemplo, a maioria dos resultados é de homônimos. O `linking.py` procura evidência pública de que os perfis são da mesma pessoa: links na bio, `rel="me"` e contas sociais declaradas na API do GitHub.
@@ -46,6 +56,8 @@ cd flask-detective
 python -m venv .venv
 # Linux/macOS: source .venv/bin/activate   |   Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env            # ajuste SECRET_KEY (e DATABASE_URL, se usar Postgres)
+flask --app app db upgrade      # cria as tabelas do banco
 python app.py
 ```
 

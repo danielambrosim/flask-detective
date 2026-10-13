@@ -1,0 +1,23 @@
+{% extends "auth/_layout.html" %}
+{% from "auth/_macros.html" import field %}
+{% block title %}Entrar — Detective{% endblock %}
+
+{% block form %}
+<h1>Entrar</h1>
+<p class="auth-sub">Acesse sua conta para ver mais resultados em cada busca.</p>
+
+{% if form.form_errors %}
+  <p class="form-alert" role="alert">{{ form.form_errors[0] }}</p>
+{% endif %}
+
+<form method="post" action="{{ url_for('auth.login', next=next_url) if next_url else url_for('auth.login') }}" class="auth-form" novalidate>
+  {{ form.csrf_token }}
+  {{ field(form.email, autocomplete="email", extra={"autofocus": True, "inputmode": "email"}) }}
+  {{ field(form.password, type="password", autocomplete="current-password") }}
+  <label class="check">{{ form.remember() }} <span>{{ form.remember.label.text }}</span></label>
+  <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+</form>
+
+<p class="auth-switch">Ainda não tem conta?
+  <a href="{{ url_for('auth.signup', next=next_url) if next_url else url_for('auth.signup') }}">Criar conta grátis</a></p>
+{% endblock %}

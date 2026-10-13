@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block body_class %}page-auth{% endblock %}
+{% block footer %}{% endblock %}
+
+
+{% block content %}
+<section class="auth">
+  <div class="auth-panel">
+    <div class="auth-box">
+      {% block form %}{% endblock %}
+    </div>
+  </div>
+
+  <aside class="auth-aside" aria-label="Planos">
+    <div class="auth-aside-inner">
+      <p class="eyebrow eyebrow-light">Planos</p>
+      <h2>Veja mais perfis com a sua conta.</h2>
+      <ul class="plan-list">
+        <li class="plan">
+          <span class="plan-name">Visitante</span>
+          <span class="plan-value">25 <small>resultados por busca</small></span>
+        </li>
+        <li class="plan plan-highlight">
+          <span class="plan-name">Conta gratuita</span>
+          <span class="plan-value">+50 <small>resultados por busca</small></span>
+        </li>
+        <li class="plan">
+          <span class="plan-name">Premium · US$ 2,50</span>
+          <span class="plan-value">Todos <small>os resultados</small></span>
+        </li>
+      </ul>
+      <p class="auth-aside-note">Planos em implantação.</p>
+    </div>
+  </aside>
+</section>
+{% endblock %}

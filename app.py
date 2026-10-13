@@ -1,6 +1,14 @@
 import os
+import secrets
+import sys
 
 from flask import Flask, jsonify, render_template, request
+from flask_limiter.errors import RateLimitExceeded
+from flask_wtf.csrf import CSRFError
+
+import auth
+from extensions import csrf, db, limiter, login_manager, migrate
+from models import User
 
 from sherlock_service import (
     MAX_SELECTED_SITES,
@@ -13,9 +21,65 @@ from sherlock_service import (
 )
 
 
-def create_app(manager: SearchManager | None = None) -> Flask:
-    app = Flask(__name__)
-    app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
+def database_url() -> str:
+    url = os.environ.get("DATABASE_URL", "")
+    if url.startswith("postgres://"):  # formato antigo usado por alguns provedores
+        url = "postgresql://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg://" + url[len("postgresql://"):]
+    return url or "sqlite:///detective.db"  # relativo à pasta instance/
+
+
+def secret_key() -> str:
+    key = os.environ.get("SECRET_KEY")
+    if key:
+        return key
+    if os.environ.get("RENDER"):
+        raise RuntimeError("Defina a variável de ambiente SECRET_KEY em produção.")
+    print("[aviso] SECRET_KEY não definida: usando chave temporária (sessões caem ao reiniciar).", file=sys.stderr)
+    return secrets.token_hex(32)
+
+
+def create_app(manager: SearchManager | None = None, config: dict | None = None) -> Flask:
+    # instance_path fixo: sem isso, `python app.py` rodado de outra pasta usaria outro banco
+    app = Flask(__name__, instance_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance"))
+    production = bool(os.environ.get("RENDER"))
+    app.config.update(
+        MAX_CONTENT_LENGTH=64 * 1024,
+        SECRET_KEY=None,
+        SQLALCHEMY_DATABASE_URI=database_url(),
+        SQLALCHEMY_ENGINE_OPTIONS={"pool_pre_ping": True},
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=production,
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SAMESITE="Lax",
+        REMEMBER_COOKIE_SECURE=production,
+        REMEMBER_COOKIE_DURATION=60 * 60 * 24 * 30,
+        WTF_CSRF_TIME_LIMIT=None,  # o token vale enquanto durar a sessão
+    )
+    app.config.update(config or {})
+    if not app.config["SECRET_KEY"]:
+        app.config["SECRET_KEY"] = secret_key()
+    os.makedirs(app.instance_path, exist_ok=True)
+
+    db.init_app(app)
+    migrate.init_app(app, db)
+    csrf.init_app(app)
+    limiter.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = "auth.login"
+    login_manager.login_message = "Entre na sua conta para continuar."
+    login_manager.login_message_category = "info"
+    # "strong" derrubaria a sessão sempre que o IP muda (o proxy do Render varia o IP visto pelo app)
+    login_manager.session_protection = "basic"
+
+    @login_manager.user_loader
+    def load_user(user_id: str):
+        return db.session.get(User, int(user_id)) if user_id.isdigit() else None
+
+    app.register_blueprint(auth.bp)
+    app.register_error_handler(RateLimitExceeded, auth.handle_rate_limit)
 
     if manager is None:
         manager = SearchManager(
@@ -86,6 +150,12 @@ def create_app(manager: SearchManager | None = None) -> Flask:
         except TooManySearches as exc:
             return jsonify(error=str(exc)), 409
         return jsonify(job.to_dict()), 202
+
+    @app.errorhandler(CSRFError)
+    def csrf_error(_):
+        if request.path.startswith("/api/"):
+            return jsonify(error="Sessão expirada. Recarregue a página."), 400
+        return render_template("auth/csrf_error.html"), 400
 
     @app.errorhandler(404)
     def not_found(_):

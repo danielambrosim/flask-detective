@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Sessão expirada — Detective{% endblock %}
+{% block content %}
+<section class="page-404">
+  <div>
+    <h1 class="h1-sm">Sessão expirada</h1>
+    <p>O formulário ficou aberto por muito tempo ou veio de outro site. Tente de novo.</p>
+    <a class="btn btn-dark" href="{{ request.path }}">Tentar novamente</a>
+  </div>
+</section>
+{% endblock %}
