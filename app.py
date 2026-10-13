@@ -70,6 +70,23 @@ def create_app(manager: SearchManager | None = None) -> Flask:
             return jsonify(error="Busca não encontrada ou expirada."), 404
         return jsonify(job.to_dict())
 
+    @app.post("/api/search/<job_id>/verify")
+    def verify_links(job_id: str):
+        job = manager.get(job_id)
+        if job is None:
+            return jsonify(error="Busca não encontrada ou expirada."), 404
+        payload = request.get_json(silent=True)
+        seed = payload.get("seed") if isinstance(payload, dict) else None
+        if not isinstance(seed, str) or not seed.strip():
+            return jsonify(error="Informe o perfil de referência."), 400
+        try:
+            manager.start_verification(job, seed)
+        except ValidationError as exc:
+            return jsonify(error=str(exc)), 400
+        except TooManySearches as exc:
+            return jsonify(error=str(exc)), 409
+        return jsonify(job.to_dict()), 202
+
     @app.errorhandler(404)
     def not_found(_):
         if request.path.startswith("/api/"):

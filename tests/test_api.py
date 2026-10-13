@@ -72,3 +72,55 @@ def test_metodo_nao_permitido(client):
 def test_404_html(client):
     r = client.get("/nao-existe")
     assert r.status_code == 404 and "Voltar para a busca" in r.get_data(as_text=True)
+
+
+# ---------------------------------------------------------- vínculo entre perfis
+class FakeVerifier:
+    def verify(self, username, seed, found):
+        return {"seed": seed, "seed_links": 1, "checked": len(found),
+                "sites": {r["site"]: {"status": "seed" if r["site"] == seed else "confirmed", "evidence": "x"}
+                          for r in found}}
+
+
+def _done_job(client, manager):
+    manager.verifier = FakeVerifier()
+    job = client.post("/api/search", json={"username": "torvalds", "mode": "custom",
+                                           "sites": ["GitHub", "Reddit"]}).get_json()
+    return wait_job(client, job["id"])
+
+
+def test_verificar_vinculos(client, manager):
+    job = _done_job(client, manager)
+    r = client.post(f"/api/search/{job['id']}/verify", json={"seed": "github"})
+    assert r.status_code == 202
+    import time
+    for _ in range(200):
+        data = client.get(f"/api/search/{job['id']}").get_json()
+        if data["verify"]["status"] == "done":
+            break
+        time.sleep(0.02)
+    assert data["verify"]["seed"] == "GitHub"
+    assert data["verify"]["sites"]["Reddit"]["status"] == "confirmed"
+
+
+def test_verificar_com_referencia_nao_encontrada(client, manager):
+    job = _done_job(client, manager)
+    r = client.post(f"/api/search/{job['id']}/verify", json={"seed": "Instagram"})
+    assert r.status_code == 400
+
+
+def test_verificar_sem_referencia(client, manager):
+    job = _done_job(client, manager)
+    assert client.post(f"/api/search/{job['id']}/verify", json={}).status_code == 400
+
+
+def test_verificar_busca_em_andamento(client, runner):
+    runner.release.clear()
+    job = client.post("/api/search", json={"username": "a", "mode": "custom", "sites": ["GitHub"]}).get_json()
+    r = client.post(f"/api/search/{job['id']}/verify", json={"seed": "GitHub"})
+    assert r.status_code == 400 and "terminar" in r.get_json()["error"]
+    runner.release.set()
+
+
+def test_verificar_busca_inexistente(client):
+    assert client.post("/api/search/nada/verify", json={"seed": "GitHub"}).status_code == 404

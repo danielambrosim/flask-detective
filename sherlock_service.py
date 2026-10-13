@@ -18,6 +18,8 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
+from linking import LinkVerifier
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SHERLOCK_DIR = os.path.join(BASE_DIR, "sherlock")
 DATA_FILE = os.path.join(SHERLOCK_DIR, "sherlock_project", "resources", "data.json")
@@ -136,6 +138,7 @@ class SearchJob:
     found: list[dict] = field(default_factory=list)
     failed: int = 0
     error: str | None = None
+    verify: dict | None = None  # {"status", "seed", ...resultado do LinkVerifier}
     created_at: float = field(default_factory=time.monotonic)
     finished_at: float | None = None
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
@@ -158,6 +161,7 @@ class SearchJob:
                 "failed": self.failed,
                 "error": self.error,
                 "elapsed": round(end - self.created_at, 1),
+                "verify": dict(self.verify) if self.verify else None,
             }
 
 
@@ -203,9 +207,11 @@ class SearchManager:
         max_pending: int = 6,
         site_timeout: int = 15,
         job_ttl: int = 15 * 60,
+        verifier: LinkVerifier | None = None,
     ):
         self.catalog = catalog
         self.runner = runner
+        self.verifier = verifier or LinkVerifier()
         self.site_timeout = site_timeout
         self.max_pending = max_pending
         self.job_ttl = job_ttl
@@ -253,3 +259,28 @@ class SearchManager:
     def get(self, job_id: str) -> SearchJob | None:
         with self._lock:
             return self.jobs.get(job_id)
+
+    def start_verification(self, job: SearchJob, seed_site: str) -> None:
+        """Verifica quais perfis encontrados estão ligados ao perfil de referência."""
+        with job.lock:
+            if job.status != "done":
+                raise ValidationError("Aguarde a busca terminar antes de verificar os vínculos.")
+            seed = next((r["site"] for r in job.found if r["site"].lower() == (seed_site or "").lower()), None)
+            if seed is None:
+                raise ValidationError("Escolha como referência um dos perfis encontrados.")
+            if job.verify and job.verify["status"] == "running":
+                raise TooManySearches("A verificação de vínculos já está em andamento.")
+            job.verify = {"status": "running", "seed": seed}
+            found = list(job.found)
+        self._pool.submit(self._run_verification, job, seed, found)
+
+    def _run_verification(self, job: SearchJob, seed: str, found: list[dict]) -> None:
+        try:
+            outcome = self.verifier.verify(job.username, seed, found)
+            with job.lock:
+                job.verify = {"status": "done", **outcome}
+        except Exception as exc:  # noqa: BLE001
+            with job.lock:
+                job.verify = {"status": "error", "seed": seed,
+                              "error": "Não foi possível verificar os vínculos. Tente novamente."}
+            print(f"[links] job {job.id} falhou: {exc!r}", file=sys.stderr)

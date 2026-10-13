@@ -121,9 +121,25 @@
         <div class="stat"><dt>Tempo</dt><dd id="stat-time">0s</dd></div>
       </dl>
 
+      <div class="verify-card" id="verify-card" hidden>
+        <div class="verify-copy">
+          <h3>Esses perfis são da mesma pessoa?</h3>
+          <p>Um mesmo nome de usuário pode pertencer a pessoas diferentes. Escolha o perfil que você conhece: verificamos quais outros estão ligados a ele por links públicos que a própria pessoa publicou.</p>
+        </div>
+        <form class="verify-form" id="verify-form">
+          <label for="verify-seed" class="visually-hidden">Perfil de referência</label>
+          <select id="verify-seed" class="select-input"></select>
+          <button type="submit" class="btn btn-primary" id="verify-btn">
+            <span class="btn-label">Verificar vínculos</span><span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+        <p class="verify-status" id="verify-status" aria-live="polite" hidden></p>
+      </div>
+
       <div class="results-toolbar" id="results-toolbar" hidden>
         <label for="results-filter" class="visually-hidden">Filtrar resultados</label>
         <input id="results-filter" class="filter-input" type="search" placeholder="Filtrar resultados…" autocomplete="off">
+        <label class="switch" id="linked-only-wrap" hidden><input type="checkbox" id="linked-only"> Só vinculados</label>
       </div>
 
       <ul class="result-grid" id="result-grid"></ul>

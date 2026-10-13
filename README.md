@@ -9,6 +9,22 @@ Aplicação web em **Flask** que usa o **[Sherlock](https://github.com/sherlock-
 * Resultados em cards, com filtro, botão para copiar os links e exportação em CSV.
 * Layout responsivo (celular, tablet e desktop).
 * Validação de entrada, limite de buscas simultâneas e cabeçalhos de segurança (CSP etc.).
+* **Verificação de vínculo:** escolha um perfil de referência (ex.: o Instagram que você conhece) e veja quais outros resultados estão ligados a ele.
+
+## Verificação de vínculo entre perfis
+
+O Sherlock só informa que um nome de usuário **existe** em um site, não que é a mesma pessoa. Na busca por "torvalds", por exemplo, a maioria dos resultados é de homônimos. O `linking.py` procura evidência pública de que os perfis são da mesma pessoa: links na bio, `rel="me"` e contas sociais declaradas na API do GitHub.
+
+| Selo | Significado |
+|---|---|
+| Referência | Perfil escolhido por você |
+| Vinculado | Ele aponta para a referência, ou a referência aponta para ele |
+| Provável | Ligado por links a um perfil já vinculado |
+| Não comprovado | Nenhum link público; pode ser outra pessoa com o mesmo nome |
+
+Limitações: Instagram, X, YouTube e TikTok não mostram bio nem links sem login, então como referência eles raramente comprovam algo. Funcionam melhor como referência GitHub, Mastodon, Keybase e sites pessoais. Só são acessadas as URLs de perfil geradas pelo Sherlock (nunca links encontrados nas páginas).
+
+API: `POST /api/search/<id>/verify` com `{"seed": "GitHub"}`. O resultado aparece no campo `verify` de `GET /api/search/<id>`.
 
 ## Estrutura
 

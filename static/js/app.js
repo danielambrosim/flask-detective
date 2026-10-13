@@ -148,6 +148,11 @@
     $("#results-actions").hidden = true;
     $("#results-toolbar").hidden = true;
     $("#progress").classList.remove("is-done", "is-error");
+    $("#verify-card").hidden = true;
+    $("#verify-status").hidden = true;
+    $("#verify-seed").replaceChildren();
+    $("#linked-only").checked = false;
+    $("#linked-only-wrap").hidden = true;
     section.hidden = false;
     section.scrollIntoView({ behavior: "smooth", block: "start" });
     render(job);
@@ -161,7 +166,8 @@
       if (!res.ok) throw new Error(data.error || "Erro ao consultar a busca.");
       state.job = data;
       render(data);
-      if (data.status === "done" || data.status === "error") return finish(data);
+      const verifying = data.verify && data.verify.status === "running";
+      if ((data.status === "done" && !verifying) || data.status === "error") return finish(data);
     } catch (err) {
       return finish({ ...state.job, status: "error", error: err.message });
     }
@@ -213,6 +219,98 @@
     $("#results-actions").hidden = !hasResults;
     $("#results-toolbar").hidden = !hasResults;
     $("#empty-state").hidden = !(done && !hasResults);
+
+    if (done && state.found.length > 1) setupVerify(job);
+    if (job.verify) renderVerify(job.verify);
+  }
+
+  // ---------------- vínculo entre perfis ----------------
+  const STATUS = {
+    seed: { label: "Referência", rank: 0 },
+    confirmed: { label: "Vinculado", rank: 1 },
+    probable: { label: "Provável", rank: 2 },
+    unverified: { label: "Não comprovado", rank: 3 },
+  };
+
+  function setupVerify(job) {
+    const select = $("#verify-seed");
+    if (select.options.length) return;
+    const sites = job.found.map((r) => r.site).sort((a, b) => a.localeCompare(b));
+    sites.forEach((site) => select.add(new Option(site, site)));
+    const preferred = ["Instagram", "GitHub", "Twitter"].find((s) => sites.includes(s));
+    if (preferred) select.value = preferred;
+    $("#verify-card").hidden = false;
+  }
+
+  $("#verify-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!state.job || state.timer) return;
+    const btn = $("#verify-btn");
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    try {
+      const res = await fetch(`/api/search/${encodeURIComponent(state.job.id)}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seed: $("#verify-seed").value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Não foi possível verificar.");
+      state.job = data;
+      render(data);
+      poll();
+    } catch (err) {
+      btn.disabled = false;
+      btn.classList.remove("is-loading");
+      toast(err.message);
+    }
+  });
+
+  function renderVerify(v) {
+    const box = $("#verify-status");
+    const btn = $("#verify-btn");
+    box.hidden = false;
+    box.classList.remove("is-warning");
+    const running = v.status === "running";
+    btn.disabled = running;
+    btn.classList.toggle("is-loading", running);
+    $(".btn-label", btn).textContent = running ? "Verificando…" : "Verificar vínculos";
+
+    if (running) {
+      box.textContent = `Abrindo os perfis e procurando links para o ${v.seed}…`;
+      return;
+    }
+    if (v.status === "error") {
+      box.textContent = v.error;
+      box.classList.add("is-warning");
+      return;
+    }
+
+    const counts = { confirmed: 0, probable: 0, unverified: 0 };
+    Object.values(v.sites).forEach((s) => { if (s.status in counts) counts[s.status]++; });
+    box.textContent = `${counts.confirmed} vinculado(s), ${counts.probable} provável(is) e ${counts.unverified} sem comprovação ao perfil do ${v.seed}.`;
+    if (v.seed_links === 0) {
+      box.textContent += ` Atenção: a página do ${v.seed} não mostrou nenhum link público (sites como Instagram e X exigem login). Tente usar outro perfil como referência.`;
+      box.classList.add("is-warning");
+    }
+
+    $$(".result-item", grid).forEach((li) => {
+      const info = v.sites[li.dataset.site] || { status: "unverified", evidence: "" };
+      li.dataset.link = info.status;
+      const badge = $(".badge", li);
+      badge.className = `badge badge-${info.status}`;
+      badge.textContent = STATUS[info.status].label;
+      badge.hidden = false;
+      const ev = $(".result-evidence", li);
+      ev.textContent = info.evidence;
+      ev.hidden = !info.evidence;
+      $(".result-card", li).classList.toggle("is-unverified", info.status === "unverified");
+    });
+    const items = $$(".result-item", grid).sort((a, b) =>
+      STATUS[a.dataset.link].rank - STATUS[b.dataset.link].rank || a.dataset.name.localeCompare(b.dataset.name));
+    grid.replaceChildren(...items);
+    $("#linked-only-wrap").hidden = false;
+    applyFilters();
   }
 
   function safeHttpUrl(u) {
@@ -228,6 +326,7 @@
     const li = document.createElement("li");
     li.className = "result-item";
     li.dataset.name = r.site.toLowerCase();
+    li.dataset.site = r.site;
 
     const url = safeHttpUrl(r.url);
     const article = document.createElement("article");
@@ -258,7 +357,13 @@
     link.title = r.url;
     meta.append(name, link);
     top.append(fav, meta);
-    article.append(top);
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.hidden = true;
+    const evidence = document.createElement("p");
+    evidence.className = "result-evidence";
+    evidence.hidden = true;
+    article.append(top, badge, evidence);
 
     if (url) {
       const a = document.createElement("a");
@@ -274,10 +379,16 @@
     return li;
   }
 
-  resultsFilter.addEventListener("input", () => {
+  function applyFilters() {
     const q = resultsFilter.value.trim().toLowerCase();
-    $$(".result-item", grid).forEach((li) => (li.hidden = q && !li.dataset.name.includes(q)));
-  });
+    const linkedOnly = $("#linked-only").checked;
+    $$(".result-item", grid).forEach((li) => {
+      const linked = ["seed", "confirmed", "probable"].includes(li.dataset.link);
+      li.hidden = Boolean((q && !li.dataset.name.includes(q)) || (linkedOnly && !linked));
+    });
+  }
+  resultsFilter.addEventListener("input", applyFilters);
+  $("#linked-only").addEventListener("change", applyFilters);
 
   // ---------------- exportação ----------------
   $("#copy-links").addEventListener("click", async () => {
@@ -296,7 +407,12 @@
       if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // evita injeção de fórmulas no Excel
       return `"${s.replace(/"/g, '""')}"`;
     };
-    const rows = [["site", "url", "tempo_resposta_s"], ...state.found.map((r) => [r.site, r.url, r.time ?? ""])];
+    const links = (state.job.verify && state.job.verify.sites) || {};
+    const rows = [["site", "url", "tempo_resposta_s", "vinculo", "evidencia"],
+      ...state.found.map((r) => {
+        const info = links[r.site];
+        return [r.site, r.url, r.time ?? "", info ? STATUS[info.status].label : "", info ? info.evidence : ""];
+      })];
     const csv = "﻿" + rows.map((row) => row.map(esc).join(",")).join("\r\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));

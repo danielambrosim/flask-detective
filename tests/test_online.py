@@ -18,3 +18,16 @@ def test_busca_real_no_github():
     assert any(f["site"] == "GitHub" for f in data["found"])
     # sem lixo com códigos ANSI (bug da versão original)
     assert all("\x1b" not in f["url"] for f in data["found"])
+
+
+@pytest.mark.online
+def test_vinculo_real_entre_github_e_x():
+    """A conta pública da Vercel declara no GitHub o perfil x.com/vercel."""
+    from linking import LinkVerifier
+
+    found = [
+        {"site": "GitHub", "url": "https://www.github.com/vercel"},
+        {"site": "Twitter", "url": "https://x.com/vercel"},
+    ]
+    out = LinkVerifier().verify("vercel", "GitHub", found)
+    assert out["sites"]["Twitter"]["status"] == "confirmed"
