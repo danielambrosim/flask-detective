@@ -8,8 +8,7 @@ services:
     autoDeploy: true
     buildCommand: pip install -r requirements.txt
     # Lê o gunicorn.conf.py: 1 worker + threads (as buscas ficam em memória)
-    # Aplica as migrations do banco e sobe o servidor
-    startCommand: flask --app app db upgrade && gunicorn app:app
+    startCommand: gunicorn app:app
     healthCheckPath: /healthz
     envVars:
       - key: PYTHON_VERSION
@@ -18,8 +17,3 @@ services:
         value: "2"
       - key: SITE_TIMEOUT
         value: "15"
-      - key: SECRET_KEY
-        generateValue: true
-      # Configure no painel: string de conexão do Postgres (SQLite no Render é apagado a cada deploy)
-      - key: DATABASE_URL
-        sync: false

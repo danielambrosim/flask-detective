@@ -9,7 +9,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from app import create_app  # noqa: E402
-from extensions import db, limiter  # noqa: E402
 from sherlock_service import SearchManager, SiteCatalog  # noqa: E402
 from sherlock_project.result import QueryResult, QueryStatus  # noqa: E402
 
@@ -61,33 +60,10 @@ def manager(catalog, runner):
     return SearchManager(catalog, runner=runner, max_workers=2, max_pending=3)
 
 
-TEST_CONFIG = {
-    "TESTING": True,
-    "SECRET_KEY": "chave-de-teste",
-    "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-    "WTF_CSRF_ENABLED": False,
-    "RATELIMIT_ENABLED": False,
-}
-
-
-def make_app(manager, **overrides):
-    app = create_app(manager, config={**TEST_CONFIG, **overrides})
-    with app.app_context():
-        db.create_all()
-    limiter.reset()
-    return app
-
-
 @pytest.fixture
-def app(manager):
-    app = make_app(manager)
-    yield app
-    with app.app_context():
-        db.drop_all()
-
-
-@pytest.fixture
-def client(app):
+def client(manager):
+    app = create_app(manager)
+    app.testing = True
     return app.test_client()
 
 

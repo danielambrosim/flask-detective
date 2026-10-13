@@ -1,11 +1,19 @@
-{% extends "base.html" %}
-{% block title %}Página não encontrada — Detective{% endblock %}
-{% block content %}
-<section class="page-404">
-  <div>
-    <h1>404</h1>
-    <p>Essa página não existe ou foi movida.</p>
-    <a class="btn btn-dark" href="{{ url_for('index') }}">Voltar para a busca</a>
-  </div>
-</section>
-{% endblock %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Página não encontrada — Detective</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <main class="page-404">
+    <div>
+      <h1>404</h1>
+      <p>Essa página não existe ou foi movida.</p>
+      <a class="btn btn-dark" href="/">Voltar para a busca</a>
+    </div>
+  </main>
+</body>
+</html>

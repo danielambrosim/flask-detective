@@ -5,8 +5,6 @@
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const USERNAME_RE = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,49}$/;
-  const CSRF = (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
-  const JSON_HEADERS = { "Content-Type": "application/json", "X-CSRFToken": CSRF };
   const POLL_MS = 1000;
 
   const form = $("#search-form");
@@ -129,7 +127,7 @@
     try {
       const res = await fetch("/api/search", {
         method: "POST",
-        headers: JSON_HEADERS,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
@@ -253,7 +251,7 @@
     try {
       const res = await fetch(`/api/search/${encodeURIComponent(state.job.id)}/verify`, {
         method: "POST",
-        headers: JSON_HEADERS,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seed: $("#verify-seed").value }),
       });
       const data = await res.json().catch(() => ({}));
@@ -424,9 +422,15 @@
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   });
 
+  // ---------------- header ----------------
+  const header = $(".site-header");
+  const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 4);
+  window.addEventListener("scroll", onScroll, { passive: true });
+
   // Ao voltar pelo histórico (bfcache), garante o botão no estado certo.
   window.addEventListener("pageshow", () => { if (!state.timer) setLoading(false); });
 
+  onScroll();
   syncPicker();
   syncSelection();
 })();
