@@ -16,20 +16,7 @@
 <body>
   <a class="skip-link" href="#busca">Pular para a busca</a>
 
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="/" aria-label="Detective, página inicial">
-        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
-        DETECTIVE
-      </a>
-      <nav class="main-nav" aria-label="Principal">
-        <a href="#busca">Buscar</a>
-        <a href="#como-funciona">Como funciona</a>
-        <a href="#responsabilidade">Uso responsável</a>
-      </nav>
-      <a class="btn btn-dark btn-sm header-cta" href="#busca">Pesquisar</a>
-    </div>
-  </header>
+  {% include "_header.html" %}
 
   <main>
     <section class="hero" id="busca">
@@ -180,12 +167,7 @@
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <p>Detective · Interface web para o <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer">Sherlock Project</a> (MIT).</p>
-      <p class="muted">Feito com Flask.</p>
-    </div>
-  </footer>
+  {% include "_footer.html" %}
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <noscript><div class="noscript">Ative o JavaScript para usar a busca.</div></noscript>

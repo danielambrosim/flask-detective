@@ -304,10 +304,54 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.02em; }
 }
 .noscript { position: fixed; inset: auto 16px 16px; padding: 14px; background: var(--danger); color: #fff; border-radius: var(--radius-sm); text-align: center; }
 
-.page-404 { min-height: 70vh; display: grid; place-items: center; text-align: center; padding: 48px 24px; }
-.page-404 h1 { font-size: clamp(56px, 12vw, 120px); font-weight: 800; }
-.page-404 p { color: var(--text-2); margin: 8px 0 24px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Página de erro (templates/error.html) ----------
+   Desktop: texto à esquerda e número do erro à direita.
+   Celular (< 960px): o número sobe para cima do texto (order: -1) e
+   o campo de busca quebra em duas linhas (< 480px). */
+.error-page { background: var(--surface); }
+.error-inner {
+  display: grid; gap: 40px; align-items: center;
+  min-height: calc(100vh - var(--header-h) - 90px); padding-top: 56px; padding-bottom: 72px;
+}
+@media (min-width: 960px) { .error-inner { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); } }
+.error-copy h1 { font-size: clamp(38px, 6.5vw, 68px); font-weight: 800; line-height: 1.05; }
+.error-copy .lead { max-width: 40ch; }
+.error-search {
+  display: flex; align-items: center; gap: 8px; max-width: 520px; padding: 4px 4px 4px 20px;
+  background: var(--bg); border: 1.5px solid var(--line); border-radius: 999px; box-shadow: var(--shadow);
+}
+.error-search:focus-within { border-color: var(--text); }
+.error-search .at { font-weight: 700; color: var(--muted); }
+.error-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; padding: 10px 0; font-size: 16px; }
+.error-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+@media (max-width: 479px) {
+  .error-search { flex-wrap: wrap; border-radius: var(--radius); padding: 6px 6px 6px 16px; }
+  .error-search input { flex-basis: calc(100% - 40px); }
+  .error-search .btn { flex: 1 0 100%; margin-left: -10px; }
+  .error-actions .btn { flex: 1 1 auto; }
+}
+.error-art { position: relative; display: grid; place-items: center; min-height: 220px; }
+@media (max-width: 959px) { .error-art { order: -1; min-height: 160px; } }
+.error-code {
+  font-size: clamp(120px, 24vw, 260px); font-weight: 800; letter-spacing: -0.06em; line-height: 1;
+  background: linear-gradient(160deg, #4f7bff, var(--primary) 55%, #050d4a);
+  -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none;
+}
+.error-lens {
+  position: absolute; width: clamp(72px, 12vw, 120px); aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; color: var(--text);
+  background: rgba(255, 255, 255, .55); backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, .8);
+  box-shadow: var(--shadow); animation: search-around 7s ease-in-out infinite;
+}
+.error-lens svg { width: 50%; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+/* A lupa "procura" passando sobre o número; desligada por prefers-reduced-motion */
+@keyframes search-around {
+  0%, 100% { transform: translate(-60%, -20%); }
+  33% { transform: translate(55%, -35%); }
+  66% { transform: translate(10%, 30%); }
 }

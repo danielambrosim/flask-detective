@@ -87,19 +87,40 @@ def create_app(manager: SearchManager | None = None) -> Flask:
             return jsonify(error=str(exc)), 409
         return jsonify(job.to_dict()), 202
 
-    @app.errorhandler(404)
-    def not_found(_):
+    # ------------------------------------------------------------------ erros
+    # Textos de cada erro tratado: (título da página, mensagem da página, mensagem da API).
+    # Para tratar um novo código, basta acrescentar uma linha aqui e no laço abaixo.
+    ERRORS = {
+        404: ("Página não encontrada", "Procuramos por toda parte, mas essa página não existe ou foi movida.",
+              "Recurso não encontrado."),
+        405: ("Ação não permitida", "Esse endereço não aceita esse tipo de acesso.", "Método não permitido."),
+        413: ("Requisição muito grande", "Os dados enviados passaram do limite permitido.", "Requisição muito grande."),
+        500: ("Algo deu errado", "Tivemos um problema inesperado. Tente de novo em instantes.",
+              "Erro interno. Tente novamente."),
+    }
+
+    def error_response(code: int):
+        """Monta a resposta de erro no formato certo para quem pediu.
+
+        A API (/api/...) é consumida pelo JavaScript, que espera JSON {"error": ...};
+        as demais rotas são abertas no navegador e recebem a página templates/error.html.
+        """
+        title, message, api_message = ERRORS[code]
         if request.path.startswith("/api/"):
-            return jsonify(error="Recurso não encontrado."), 404
-        return render_template("404.html"), 404
+            return jsonify(error=api_message), code
+        return render_template("error.html", code=code, title=title, message=message), code
 
-    @app.errorhandler(405)
-    def method_not_allowed(_):
-        return jsonify(error="Método não permitido."), 405
+    # 404 (rota inexistente), 405 (método errado) e 413 (corpo grande demais) usam a mesma
+    # função. O "c=_code" fixa o código de cada lambda; sem ele, todas usariam o último (413).
+    for _code in (404, 405, 413):
+        app.register_error_handler(_code, lambda _e, c=_code: error_response(c))
 
-    @app.errorhandler(413)
-    def too_large(_):
-        return jsonify(error="Requisição muito grande."), 413
+    @app.errorhandler(500)
+    def internal_error(err):
+        # Qualquer exceção não tratada chega aqui. A exceção original (com traceback) vai
+        # para o log do servidor; o usuário vê só a página amigável, sem detalhes internos.
+        app.logger.error("Erro 500 em %s", request.path, exc_info=getattr(err, "original_exception", err))
+        return error_response(500)
 
     @app.after_request
     def security_headers(resp):

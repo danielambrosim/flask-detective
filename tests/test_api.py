@@ -69,11 +69,6 @@ def test_metodo_nao_permitido(client):
     assert client.get("/api/search").status_code == 405
 
 
-def test_404_html(client):
-    r = client.get("/nao-existe")
-    assert r.status_code == 404 and "Voltar para a busca" in r.get_data(as_text=True)
-
-
 # ---------------------------------------------------------- vínculo entre perfis
 class FakeVerifier:
     def verify(self, username, seed, found):

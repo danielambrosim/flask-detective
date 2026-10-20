@@ -433,4 +433,14 @@
   onScroll();
   syncPicker();
   syncSelection();
+
+  // Busca iniciada pela página de erro: o campo de lá envia para /?u=usuario.
+  // Preenche o campo, limpa o ?u= da barra de endereço (para um F5 não repetir a busca)
+  // e dispara o envio pelo mesmo caminho do botão "Pesquisar", com as mesmas validações.
+  const initialUser = new URLSearchParams(location.search).get("u");
+  if (initialUser) {
+    history.replaceState(null, "", location.pathname);
+    input.value = initialUser.slice(0, 51);
+    form.requestSubmit();
+  }
 })();

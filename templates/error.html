@@ -1,0 +1,59 @@
+{# Página única para os erros 404, 405, 413 e 500 (ver error_response em app.py).
+   Recebe: code (número do erro), title e message (textos amigáveis).
+   Não tem <script>: funciona mesmo se o JavaScript falhar e respeita a CSP. #}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# noindex: buscadores não devem guardar páginas de erro #}
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#ffffff">
+  <title>{{ title }} — Detective</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  {% include "_header.html" %}
+
+  <main class="error-page">
+    <div class="container error-inner">
+      <div class="error-copy">
+        <p class="eyebrow">Erro {{ code }}</p>
+        <h1>{{ title }}</h1>
+        <p class="lead">{{ message }}</p>
+
+        {# Envia para /?u=usuario; o app.js da página inicial preenche o campo e inicia a busca #}
+        <form class="error-search" action="/" method="get" role="search">
+          <label for="error-u" class="visually-hidden">Nome de usuário</label>
+          <span class="at" aria-hidden="true">@</span>
+          <input id="error-u" name="u" type="text" placeholder="Pesquisar um usuário" maxlength="51"
+                 autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button type="submit" class="btn btn-primary">Pesquisar</button>
+        </form>
+
+        <div class="error-actions">
+          <a class="btn btn-dark" href="/">Voltar para o início</a>
+          {# "Tentar de novo" só faz sentido em falha temporária do servidor #}
+          {% if code == 500 %}
+            <a class="btn btn-outline" href="{{ request.path }}">Tentar de novo</a>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Ilustração decorativa (aria-hidden: leitores de tela ignoram) #}
+      <div class="error-art" aria-hidden="true">
+        <span class="error-code">{{ code }}</span>
+        <div class="error-lens">
+          <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  {% include "_footer.html" %}
+</body>
+</html>
